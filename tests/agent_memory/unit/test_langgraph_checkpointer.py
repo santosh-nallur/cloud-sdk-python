@@ -13,7 +13,7 @@ from sap_cloud_sdk.agent_memory.factory.langgraph_checkpoint import create_check
 
 
 class TestCreateCheckpointer:
-    """Tests for create_checkpointer() factory — AGENTMAAS-410."""
+    """Tests for create_checkpointer() factory."""
 
     # ── Return type ───────────────────────────────────────────────────────────
 
