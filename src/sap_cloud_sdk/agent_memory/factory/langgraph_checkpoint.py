@@ -52,5 +52,8 @@ def create_checkpointer():
             "langgraph is required for create_checkpointer(). "
             "Install it with: pip install langgraph"
         )
-    logger.info("Using in-memory checkpointer; state will not persist across restarts.")
+    logger.warning(
+        "create_checkpointer(): using InMemorySaver — "
+        "session state is in-process only and will be lost on process exit."
+    )
     return InMemorySaver()
