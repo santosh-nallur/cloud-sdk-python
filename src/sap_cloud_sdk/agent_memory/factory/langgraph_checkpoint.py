@@ -52,4 +52,5 @@ def create_checkpointer():
             "langgraph is required for create_checkpointer(). "
             "Install it with: pip install langgraph"
         )
+    logger.info("Using in-memory checkpointer; state will not persist across restarts.")
     return InMemorySaver()
