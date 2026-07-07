@@ -4,7 +4,12 @@ Usage::
 
     from sap_cloud_sdk.agent_memory.factory.langgraph_checkpoint import create_checkpointer
 
+    # No TTL — plain InMemorySaver
     checkpointer = create_checkpointer()
+
+    # With TTL — TimedInMemorySaver evicts inactive threads automatically
+    checkpointer = create_checkpointer(ttl_seconds=3600)
+
     app = workflow.compile(checkpointer=checkpointer)
 
     # Or with LangChain create_agent:
@@ -13,16 +18,21 @@ Usage::
 """
 
 import logging
+from typing import Optional
 
 logger = logging.getLogger(__name__)
 
 
-def create_checkpointer():
+def create_checkpointer(*, ttl_seconds: Optional[int] = None):
     """Create a LangGraph checkpointer for the current environment.
 
-    Returns LangGraph's ``InMemorySaver``. State is held in-process
-    and does not survive restarts. Persistent checkpointing backed by
-    the Agent Memory Service is not yet supported.
+    Returns LangGraph's ``InMemorySaver`` (no TTL) or
+    ``TimedInMemorySaver`` (with TTL-based thread eviction).
+    State is held in-process and does not survive restarts.
+
+    Args:
+        ttl_seconds: Evict threads inactive for this many seconds.
+                     ``None`` (default) disables eviction.
 
     Returns:
         BaseCheckpointSaver instance.
@@ -30,20 +40,29 @@ def create_checkpointer():
     Raises:
         ImportError: If langgraph is not installed.
 
-    Example — compile a LangGraph workflow::
+    Example — no TTL::
 
         checkpointer = create_checkpointer()
         app = workflow.compile(checkpointer=checkpointer)
-        result = app.invoke(input, {"configurable": {"thread_id": "abc"}})
 
-    Example — use with LangChain create_agent::
+    Example — evict threads inactive for 1 hour::
 
-        from langchain.agents import create_agent
-        agent = create_agent(
-            model="...",
-            tools=[...],
-            checkpointer=create_checkpointer(),
+        checkpointer = create_checkpointer(ttl_seconds=3600)
+        app = workflow.compile(checkpointer=checkpointer)
+
+    Example — with @agent_config for centralised TTL configuration::
+
+        from sap_cloud_sdk.agent_decorators import agent_config
+
+        @agent_config(
+            key="config.thread_ttl_seconds",
+            label="Thread TTL (seconds)",
+            description="Evict inactive threads after this period",
         )
+        def thread_ttl_seconds() -> int:
+            return 3600
+
+        checkpointer = create_checkpointer(ttl_seconds=thread_ttl_seconds())
     """
     try:
         from langgraph.checkpoint.memory import InMemorySaver
@@ -52,6 +71,17 @@ def create_checkpointer():
             "langgraph is required for create_checkpointer(). "
             "Install it with: pip install langgraph"
         )
+
+    if ttl_seconds is not None:
+        from sap_cloud_sdk.agent_memory.factory._timed_memory import TimedInMemorySaver
+
+        logger.warning(
+            "create_checkpointer(): using TimedInMemorySaver(ttl_seconds=%d) — "
+            "session state is in-process only and will be lost on process exit.",
+            ttl_seconds,
+        )
+        return TimedInMemorySaver(ttl_seconds=ttl_seconds)
+
     logger.warning(
         "create_checkpointer(): using InMemorySaver — "
         "session state is in-process only and will be lost on process exit."
