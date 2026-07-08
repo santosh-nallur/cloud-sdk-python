@@ -831,9 +831,10 @@ manages short-term session memory — conversation state, thread continuity, and
 HITL support — natively within LangGraph.
 
 > [!NOTE]
-> The current implementation uses LangGraph's `InMemorySaver`. State is held
-> in-process and does not survive restarts. Persistent checkpointing backed by
-> the Agent Memory Service is not yet supported.
+> The current implementation uses LangGraph's `InMemorySaver` or
+> `TimedInMemorySaver` (when `ttl_seconds` is set). State is held in-process
+> and does not survive restarts. Persistent checkpointing backed by the
+> Agent Memory Service is not yet supported.
 
 ### Prerequisites
 
@@ -876,3 +877,37 @@ agent = create_agent(
     checkpointer=create_checkpointer(),
 )
 ```
+
+### Thread TTL — evicting inactive threads
+
+Pass `ttl_seconds` to evict threads that have been inactive beyond the given
+threshold. This prevents unbounded memory growth in long-running processes.
+
+```python
+# Evict threads inactive for more than 1 hour
+checkpointer = create_checkpointer(ttl_seconds=3600)
+```
+
+Returns a `TimedInMemorySaver` that tracks last-active time per thread and
+evicts expired threads via a background sweep. Eviction is best-effort —
+a thread may live up to `ttl_seconds + 60` seconds before deletion.
+
+**Using `@agent_config` for centralised TTL configuration:**
+
+```python
+from sap_cloud_sdk.agent_decorators import agent_config
+from sap_cloud_sdk.agent_memory.factory.langgraph_checkpoint import create_checkpointer
+
+@agent_config(
+    key="config.thread_ttl_seconds",
+    label="Thread TTL (seconds)",
+    description="Evict inactive conversation threads after this period of inactivity",
+)
+def thread_ttl_seconds() -> int:
+    return 3600
+
+checkpointer = create_checkpointer(ttl_seconds=thread_ttl_seconds())
+```
+
+This exposes TTL in the low-code UI alongside model selection and other
+agent settings, allowing operators to adjust it without code changes.
