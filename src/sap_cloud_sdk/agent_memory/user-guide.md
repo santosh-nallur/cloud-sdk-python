@@ -838,10 +838,13 @@ HITL support — natively within LangGraph.
 
 ### Prerequisites
 
-`langgraph` must be installed. The SDK does not declare it as a dependency —
-you control your own LangGraph version.
+`langgraph` is an optional dependency. Install it via the SDK extra or directly:
 
 ```bash
+# Via SDK optional extra (recommended)
+pip install "sap-cloud-sdk[langgraph]"
+
+# Or install langgraph directly
 pip install langgraph
 ```
 

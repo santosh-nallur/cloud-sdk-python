@@ -28,12 +28,14 @@ dependencies = [
     "opentelemetry-api>=1.42.1",
     "opentelemetry-sdk>=1.42.1",
     "mcp>=1.1.0",
+    "pre-commit>=4.6.0",
 ]
 
 [project.optional-dependencies]
 extensibility = ["a2a-sdk>=0.2.0"]
 starlette = ["starlette>=0.40.0"]
 langchain = ["langchain-core>=1.2.7"]
+langgraph = ["langgraph>=0.2.0"]
 
 [build-system]
 requires = ["hatchling"]
