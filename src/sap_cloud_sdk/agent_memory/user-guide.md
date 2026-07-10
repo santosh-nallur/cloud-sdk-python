@@ -896,6 +896,35 @@ tracks last-active time per thread and evicts inactive threads via a
 background daemon sweep. Eviction is best-effort — a thread may live up to
 `ttl_seconds + 60` seconds before deletion.
 
+**Exposing TTL as a configurable parameter with `@agent_config`:**
+
+Use `@agent_config` from `sap_cloud_sdk.agent_decorators` to expose
+`ttl_seconds` as an operator-adjustable configuration field. The key
+`config.checkpointer.ttl_seconds` groups it with other checkpointer settings
+so external tooling can surface it in the low-code UI alongside model
+selection and temperature.
+
+```python
+from sap_cloud_sdk.agent_decorators import agent_config
+from sap_cloud_sdk.agent_memory.factory.langgraph_checkpoint import create_checkpointer
+
+
+@agent_config(
+    key="config.checkpointer.ttl_seconds",
+    label="Thread TTL (seconds)",
+    description="Evict inactive conversation threads after this period of "
+                "inactivity. Set to 0 to disable eviction.",
+)
+def thread_ttl_seconds() -> int:
+    return 3600
+
+
+class MyAgent:
+    def __init__(self):
+        ttl = thread_ttl_seconds()
+        self._checkpointer = create_checkpointer(ttl_seconds=ttl or None)
+```
+
 > [!NOTE]
 > `TimedInMemorySaver` state does not survive process restarts — the TTL
 > applies to in-process memory only. Persistent TTL enforcement will be
