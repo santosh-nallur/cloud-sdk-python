@@ -916,7 +916,7 @@ from sap_cloud_sdk.agent_memory.factory.langgraph_checkpoint import create_check
                 "inactivity. Set to 0 to disable eviction.",
 )
 def thread_ttl_seconds() -> int:
-    return 3600
+    return 3600 # 1 hour
 
 
 class MyAgent:
