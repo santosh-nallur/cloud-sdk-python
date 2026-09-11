@@ -88,7 +88,6 @@ def create_checkpointer(*, ttl_seconds: Optional[int] = None):
             client_id=config.client_id,
             client_secret=config.client_secret,
             timeout=config.timeout,
-            ttl_seconds=ttl_seconds,
         )
 
     try:
